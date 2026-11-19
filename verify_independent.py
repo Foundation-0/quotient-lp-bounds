@@ -77,6 +77,9 @@ def verify_quotient_lp_certificate(cert: Dict[str, Any]) -> Dict[str, Any]:
       subject to y_e >= 0, z_u >= 0
                  sum_{e out of u} y_e - sum_{e into u} y_e + z_u >= mu[u]   (for u not in goals)
     """
+    if not isinstance(cert, dict):
+        return {"valid": False, "reason": "cert_not_dict"}
+
     n = cert.get("num_vertices")
     if isinstance(n, bool) or not isinstance(n, int) or n <= 0:
         return {"valid": False, "reason": "invalid_num_vertices"}
@@ -180,21 +183,45 @@ def verify_quotient_lp_certificate(cert: Dict[str, Any]) -> Dict[str, Any]:
             "reason": f"strong_duality_gap_nonzero:{primal_obj}!={dual_obj}",
         }
 
+    if "primal_objective" not in cert or "dual_objective" not in cert:
+        return {"valid": False, "reason": "missing_claimed_objectives"}
+    try:
+        claimed_primal = parse_q(cert["primal_objective"])
+        claimed_dual = parse_q(cert["dual_objective"])
+    except ValueError as exc:
+        return {"valid": False, "reason": f"claimed_objective_parse_error:{exc}"}
+    if primal_obj != claimed_primal:
+        return {
+            "valid": False,
+            "reason": f"claimed_primal_objective_mismatch:{primal_obj}!={claimed_primal}",
+        }
+    if dual_obj != claimed_dual:
+        return {
+            "valid": False,
+            "reason": f"claimed_dual_objective_mismatch:{dual_obj}!={claimed_dual}",
+        }
+
     # Optional zero-self-loop monotone deficit check (`Mcproof.Spec.zeroSelfLoop_deficit_composition`)
     deficit_spec = cert.get("zero_self_loop_deficit")
     if deficit_spec is not None:
-        phi_raw = deficit_spec.get("phi_values", [])
-        abs_edges = deficit_spec.get("abstract_deficit_edges", [])
+        if not isinstance(deficit_spec, dict):
+            return {"valid": False, "reason": "invalid_deficit_spec_type"}
+        phi_raw = deficit_spec.get("phi_values")
+        abs_edges = deficit_spec.get("abstract_deficit_edges")
         if not isinstance(phi_raw, list) or not phi_raw:
             return {"valid": False, "reason": "invalid_deficit_phi_values"}
+        if not isinstance(abs_edges, list) or not abs_edges:
+            return {"valid": False, "reason": "empty_or_invalid_deficit_edges"}
         try:
             phi = [parse_q(x) for x in phi_raw]
         except ValueError as exc:
             return {"valid": False, "reason": f"deficit_phi_parse_error:{exc}"}
+        if any(p < 0 for p in phi):
+            return {"valid": False, "reason": "negative_deficit_phi"}
         m_phi = len(phi)
-        goal_phi_indices = deficit_spec.get("goal_phi_indices", [])
-        if not goal_phi_indices:
-            return {"valid": False, "reason": "empty_goal_phi_indices"}
+        goal_phi_indices = deficit_spec.get("goal_phi_indices")
+        if not isinstance(goal_phi_indices, list) or not goal_phi_indices:
+            return {"valid": False, "reason": "empty_or_invalid_goal_phi_indices"}
         for gi in goal_phi_indices:
             if isinstance(gi, bool) or not isinstance(gi, int) or gi < 0 or gi >= m_phi or phi[gi] != 0:
                 return {"valid": False, "reason": "nonzero_or_invalid_goal_phi"}
@@ -217,7 +244,12 @@ def verify_quotient_lp_certificate(cert: Dict[str, Any]) -> Dict[str, Any]:
                 or not isinstance(is_self, bool)
             ):
                 return {"valid": False, "reason": f"invalid_deficit_edge_fields_{a_idx}"}
-            cost = parse_q(cost_raw)
+            try:
+                cost = parse_q(cost_raw)
+            except ValueError as exc:
+                return {"valid": False, "reason": f"deficit_edge_cost_parse_error_{a_idx}:{exc}"}
+            if cost < 0:
+                return {"valid": False, "reason": f"negative_deficit_edge_cost_{a_idx}"}
             d_phi = phi[pu] - phi[pv]
             if is_self:
                 if d_phi > cost:
@@ -244,8 +276,14 @@ def verify_certificate_bundle_file(path: Path) -> Dict[str, Any]:
     if not isinstance(instances, list) or not instances:
         return {"valid": False, "reason": "empty_instances_list"}
     results = []
-    for inst in instances:
-        name = inst.get("name", "<unnamed>")
+    seen_names = set()
+    for idx, inst in enumerate(instances):
+        if not isinstance(inst, dict):
+            return {"valid": False, "reason": f"instance_{idx}_not_dict"}
+        name = inst.get("name")
+        if not isinstance(name, str) or not name or name in seen_names:
+            return {"valid": False, "reason": f"invalid_or_duplicate_instance_name_at_{idx}"}
+        seen_names.add(name)
         res = verify_quotient_lp_certificate(inst)
         if not res["valid"]:
             return {"valid": False, "reason": f"instance_{name}_failed:{res['reason']}"}

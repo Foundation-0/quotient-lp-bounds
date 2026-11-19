@@ -132,22 +132,26 @@ def synthesize_1lipschitz_quotient_lp(
     h_exact: List[Fraction] = [x if x is not None else Fraction(0, 1) for x in h]
 
     # Route exact dual flow `mu[u]` down the tight shortest-path arborescence in decreasing `h[u]`
-    # (breaking ties on `w == 0` edges via topological distance along `parent_idx` to SINK).
+    # (breaking ties on `w == 0` edges via iterative topological distance along `parent_idx` to SINK).
     depth_to_sink = [-1] * num_vertices
-
-    def get_depth(u: int) -> int:
-        if depth_to_sink[u] >= 0:
-            return depth_to_sink[u]
-        if parent_kind[u] in ("goal", "cap"):
-            depth_to_sink[u] = 0
-            return 0
-        e_id = parent_idx[u]
-        _, nxt_v, _ = edges[e_id]
-        depth_to_sink[u] = 1 + get_depth(nxt_v)
-        return depth_to_sink[u]
-
-    for u in range(num_vertices):
-        get_depth(u)
+    for start_u in range(num_vertices):
+        if depth_to_sink[start_u] >= 0:
+            continue
+        trail: List[int] = []
+        cur = start_u
+        while depth_to_sink[cur] < 0:
+            if parent_kind[cur] in ("goal", "cap"):
+                depth_to_sink[cur] = 0
+                break
+            trail.append(cur)
+            if len(trail) > num_vertices:
+                raise RuntimeError("Zero-weight parent cycle in shortest-path arborescence")
+            e_id = parent_idx[cur]
+            _, cur, _ = edges[e_id]
+        base_d = depth_to_sink[cur]
+        for node in reversed(trail):
+            base_d += 1
+            depth_to_sink[node] = base_d
 
     order = sorted(range(num_vertices), key=lambda u: (h_exact[u], depth_to_sink[u]), reverse=True)
     flow_at = [Fraction(mu[u]) for u in range(num_vertices)]
@@ -276,9 +280,10 @@ def build_hardin_strip_instance() -> Dict[str, Any]:
     horizontal `(c[i]=1, c[i+1]=1)` or antidiagonal `(prev[i+1]=1, cur[i]=1)` edge).
     Vertices are `(col_mask in 0..15, defect_budget_used in 0..2)`:
       - Goals are zero-defect terminal columns `(col_mask == 0, used == 0)`.
-      - Appending a column `nxt_mask` charges edge cost equal to `popcount(nxt_mask)` occupied 1-bits
-        plus `1/2` per new horizontal/antidiagonal defect, certifying the exact rational minimum
-        1-bit / defect clearance distance across all transfer states.
+      - Appending a valid column `nxt_mask` charges half-integer step cost
+        `(1 + popcount(nxt_mask) + new_def) / 2` (`1/2` base column advance plus `1/2` per
+        occupied `1`-bit plus `1/2` per new horizontal/antidiagonal defect), and defect-reset
+        scrub (`used -> used - 1`) charges `2`.
     """
     states: List[Tuple[int, int]] = []
     idx_of: Dict[Tuple[int, int], int] = {}
@@ -301,7 +306,7 @@ def build_hardin_strip_instance() -> Dict[str, Any]:
             if used + new_def <= 1:
                 # Valid A268991 transfer step (at most 1 occupied horiz/antidiag edge cumulatively)
                 n_used = used + new_def
-                w = Fraction(bin(nm).count("1") + 1, 2)
+                w = Fraction(1 + bin(nm).count("1") + new_def, 2)
                 edges.append((u, idx_of[(nm, n_used)], w))
         # Defect-reset scrub operation (costs 2)
         if used > 0:
@@ -318,7 +323,7 @@ def build_hardin_strip_instance() -> Dict[str, Any]:
 
 
 def build_cyclic_switch_partition_instance() -> Dict[str, Any]:
-    """Instance 3: Coupled 2-agent routing quotient with fractional operator-cost splitting & cyclic switch tax."""
+    """Instance 3: Coupled 2-agent 5x5-aura routing quotient with unit step costs and cyclic switch parity."""
     # (d1 in 0..3, d2 in 0..3, active in {0, 1})
     states: List[Tuple[int, int, int]] = []
     idx_of: Dict[Tuple[int, int, int], int] = {}
