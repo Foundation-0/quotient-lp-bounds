@@ -32,6 +32,10 @@ python3 -O -B -m unittest discover -s tests -p 'test_*.py' -v
 
 `verify_independent.py` shares zero imports with `verify.py`. It parses `certificate.json` through a strict float-rejecting JSON loader and checks non-negativity, goal zeroing, edge Lipschitz inequalities, dual flow conservation, exact strong duality, and zero-self-loop deficit monotonicity.
 
+## Rounding Direction
+
+Flooring each share of a cost partition to a grid of step 1/D keeps the shares within the operator cost. Potentials computed before rounding are then stale and must be recomputed on the rounded costs. The loss per share at a vertex is at most the edges on its shortest path after rounding, divided by D. The proof and controls are in `PROOF.md` section 4, and `tests/test_rounding.py` checks them on the three instances.
+
 ## What Is Not Proved
 
 - Quotient LP certificates prove 1-Lipschitz consistency and LP optimality on the supplied quotient graph $Q$. Soundness on a concrete domain $S$ additionally requires verifying that every concrete transition $s \to s'$ maps to an edge (or self-loop) in $Q$.
