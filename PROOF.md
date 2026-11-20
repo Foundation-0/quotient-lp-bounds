@@ -57,7 +57,7 @@ In the test file it is test 05, and `verify_independent.py` rejects it with `lip
 
 **4.3 The loss is bounded by edges over $D$.** Fix a share, write $d$ and $d'$ for distances under $c_i$ and $c'_i$, and let $P$ be a shortest path from $v$ under $c'_i$ with $|P|$ edges. For every edge, $c_i(e) - c'_i(e) < 1/D$ because flooring removes less than one grid step. Then
 $$d(v) \le c_i(P) \le c'_i(P) + |P|/D = d'(v) + |P|/D.$$
-So $d(v) - d'(v) \le |P|/D$, strictly less when $|P| > 0$. The bound holds for every shortest path $P$ after rounding, in particular the one with fewest edges, which is what the test uses. Over the 18 runs the largest observed ratio of loss to $|P|/D$ is $6/7$ (about $0.857$).
+So $d(v) - d'(v) \le |P|/D$, strictly less when $|P| > 0$. The bound holds for every shortest path $P$ after rounding, in particular the one with fewest edges, which is what the test uses. Over the 18 runs the largest observed ratio of loss to $|P|/D$ is $6/7$ (about $0.857$), and test 03 asserts that value.
 
 **Controls that must fail.** Each is a test that goes red if the guarded behavior is changed:
 

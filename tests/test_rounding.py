@@ -75,6 +75,8 @@ def over_budget_edges(costs: list, shares: list) -> list:
 
 def dist_and_hops(n: int, goals: list, edges: list, cost: list):
     """Distance to the goal set and fewest edges among shortest paths. Own code, no repo imports."""
+    if any(c < 0 for c in cost):
+        raise AssertionError("negative edge cost")
     radj = [[] for _ in range(n)]
     for e, (u, v, _) in enumerate(edges):
         radj[v].append((u, e))
@@ -171,7 +173,8 @@ class TestFloorRounding(unittest.TestCase):
                 for v in range(n):
                     if hops[v]:
                         worst = max(worst, (pre[v] - post[v]) * d / hops[v])
-        self.assertLessEqual(worst, 1)
+        # The largest ratio over the 18 runs, quoted in PROOF.md 4.3. It is below 1, as the proof says.
+        self.assertEqual(worst, Fraction(6, 7))
 
     def test_04_must_fail_ceiling_breaks_the_share_budget(self) -> None:
         name, n, goals, edges = load_instances()[0]
@@ -218,6 +221,10 @@ class TestFloorRounding(unittest.TestCase):
         self.assertEqual(over_budget_edges(costs, shares), [])
         shares[1][3] += Fraction(1, 10 ** 9)
         self.assertEqual(over_budget_edges(costs, shares), [3])
+        # A negative share is flagged even though it lowers the sum.
+        shares = split_costs("thirds", costs)
+        shares[0][5] = -Fraction(1, 10 ** 9)
+        self.assertEqual(over_budget_edges(costs, shares), [5])
 
     def test_08_must_fail_loss_bound_with_half_the_hops(self) -> None:
         # Shows the loss check is not vacuous: half the allowance is exceeded on a real run.

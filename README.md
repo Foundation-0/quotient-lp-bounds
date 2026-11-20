@@ -34,7 +34,7 @@ python3 -O -B -m unittest discover -s tests -p 'test_*.py' -v
 
 ## Rounding Direction
 
-Flooring each share of a cost partition to a grid of step 1/D keeps the shares within the operator cost. Potentials computed before rounding are then stale and must be recomputed on the rounded costs. The loss per share at a vertex is at most the edges on its shortest path after rounding, divided by D. The proof and controls are in `PROOF.md` section 4, and `tests/test_rounding.py` checks them on the three instances.
+Flooring each share of a cost partition to a grid of step 1/D keeps the shares within the operator cost. Potentials computed before rounding go stale wherever a distance falls, so they must be recomputed on the rounded costs. The loss per share at a vertex is at most the edges on its shortest path after rounding, divided by D. The proof and controls are in `PROOF.md` section 4, and `tests/test_rounding.py` checks them on the three instances.
 
 ## What Is Not Proved
 
