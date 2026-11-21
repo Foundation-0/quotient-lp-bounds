@@ -71,7 +71,7 @@ So $d(v) - d'(v) \le |P|/D$, strictly less when $|P| > 0$. The bound holds for e
 
 A reduced-cost tower peels one quotient at a time. Write $c_0 = c$. Layer $j$ has a quotient map $\pi_j$. It solves for the distance $h_j$ to the goal classes on the quotient graph under the residual cost $c_{j-1}$. Each quotient edge takes the least cost among the concrete edges that map to it.
 
-The layer then sets $s_j(e) = h_j(\pi_j(u)) - h_j(\pi_j(v))$ for $e = (u, v)$ and passes on $c_j = c_{j-1} - s_j$. This is saturated cost partitioning in the planning literature (Keller et al., IJCAI 2016, Definition 4, and Seipp, Keller and Helmert, JAIR 2020, Definition 13).
+The layer then sets $s_j(e) = h_j(\pi_j(u)) - h_j(\pi_j(v))$ for $e = (u, v)$ and passes on $c_j = c_{j-1} - s_j$. In the planning literature this is saturated cost partitioning in its state-dependent form, where each transition gets its own share (Keller et al., IJCAI 2016, Definition 4). Seipp, Keller and Helmert, JAIR 2020, Definition 13 gives the same tower when each transition is its own label.
 
 Foundation-0/quotient-lp-bounds draft pull request 5 builds such a tower with exact fractions. The tower and its instance are that draft's work. The examples below are ours, found while checking it.
 
@@ -85,11 +85,11 @@ The residual of edge $2 \to 1$ is $1/2 + 0 - 1 = -1/2$. A negative residual woul
 
 The shares are $1/2$ on $1 \to 2$, $-1/2$ on $2 \to 1$, $3/2$ on $1 \to 0$ and $1$ on $2 \to 0$. Flooring each share at $D = 1$ gives $0$ and $-1$ around the 2-cycle, so the cycle has total share $-1$.
 
-The residual costs stay non-negative, so a budget check passes. But the shares now contain a negative cycle, and the distance under them is not defined.
+The residual costs stay non-negative, so a check that only asks whether the shares sum to at most the cost passes. The check in 4.1 also rejects negative shares, so it would catch this. But the shares now contain a negative cycle, and the distance under them is not defined.
 
 **The safe rule.** Before solving layer $j$, replace its input costs by $\lfloor D \cdot c_{j-1}(e) \rfloor / D$. Solve on those costs and take the shares from the resulting potentials. Pass on the exact residual $c_j = c_{j-1} - s_j$.
 
-By induction $c_{j-1} \ge 0$. Flooring is monotone, so the quotient weight is the floor of the least concrete residual. The potential $h_j$ is a distance under floored costs, so on crossing edges $s_j(e) \le \lfloor D \cdot c_{j-1}(e) \rfloor / D \le c_{j-1}(e)$. On self-loops of the quotient $s_j = 0$. So $c_j \ge 0$.
+Operator costs are non-negative, so $c_0 \ge 0$. Assume $c_{j-1} \ge 0$. Flooring is monotone, so the quotient weight is the floor of the least concrete residual. The potential $h_j$ is a distance under floored costs, so on crossing edges $s_j(e) \le \lfloor D \cdot c_{j-1}(e) \rfloor / D \le c_{j-1}(e)$. On self-loops of the quotient $s_j = 0$. So $c_j \ge 0$.
 
 Summing the shares telescopes to $H(u) - H(v) \le c(e)$ for $H = \sum_j h_j \circ \pi_j$. Every $h_j$ lies on the grid $1/D$. In Example A the rule gives $h = (0, 0, 0)$. In Example B it gives shares $0$ and $0$ around the cycle.
 
@@ -102,7 +102,7 @@ The proof gives no bound on how much value the rule loses against the exact towe
 - Flooring potentials is rejected on Example A and on some of the small graphs (tests 09 and 11).
 - Flooring shares is rejected on Example B by the negative-cycle check (test 10).
 - The negative-cycle check fires on a corrupted share vector and stays quiet on a repaired one (test 10).
-- A summed potential raised by $1/2$ above an edge limit is rejected by the consistency check (test 11).
+- A summed potential raised by $1/2$ above an edge limit is rejected by the consistency check. So is a raised goal potential (test 11).
 - The same graphs on a coarser grid are off the grid, and there the rules differ (test 11).
 
 What this does not show: the share-sum rule in 4.1 is checked by code in the test file, because `verify_independent.py` verifies one potential at a time and has no notion of a partition.

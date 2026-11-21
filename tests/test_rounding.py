@@ -12,7 +12,7 @@ Three statements are checked on the three instances in certificate.json, for D =
 
 Three more statements cover signed shares, as made by a reduced-cost tower (tests 09 to 11):
 
-  D. Flooring the potentials of a layer after the fact leaves a negative residual cost.
+  D. Flooring the potentials of a layer after the fact can leave a negative residual cost.
   E. Flooring signed shares can create a negative cycle among the shares.
   F. Flooring each layer's input costs before solving the layer keeps every residual non-negative
      and the summed potentials consistent. Costs already on the grid need no rounding at all.
@@ -416,6 +416,12 @@ class TestFloorRounding(unittest.TestCase):
         tampered = list(total)
         u, v, w = edges[0]
         tampered[u] = tampered[v] + w + Fraction(1, 2)
+        self.assertFalse(consistent(5, [0], edges, tampered))
+        # Must-fail control on the goal clause: a raised goal potential loosens every edge into the goal,
+        # so only the goal check can reject it.
+        tampered = list(total)
+        tampered[0] += 1
+        self.assertTrue(all(tampered[a] - tampered[b] <= c for a, b, c in edges))
         self.assertFalse(consistent(5, [0], edges, tampered))
 
 
