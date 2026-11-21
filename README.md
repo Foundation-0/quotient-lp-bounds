@@ -32,6 +32,14 @@ python3 -O -B -m unittest discover -s tests -p 'test_*.py' -v
 
 `verify_independent.py` shares zero imports with `verify.py`. It parses `certificate.json` through a strict float-rejecting JSON loader and checks non-negativity, goal zeroing, edge Lipschitz inequalities, dual flow conservation, exact strong duality, and zero-self-loop deficit monotonicity.
 
+## Rounding Direction
+
+Flooring each share of a cost partition to a grid of step 1/D keeps non-negative shares within the operator cost. Potentials computed before rounding go stale wherever a distance falls, so they must be recomputed on the rounded costs. The loss per share at a vertex is at most the edges on its shortest path after rounding, divided by D.
+
+The proof and controls are in `PROOF.md` section 4, and `tests/test_rounding.py` checks them on the three instances. The three statements above assume non-negative shares. A reduced-cost tower, as in Foundation-0/quotient-lp-bounds draft pull request 5, produces shares of either sign. There, flooring potentials after the fact can leave negative residual costs, and flooring shares can create a negative cycle.
+
+The safe rule is to floor each layer's input costs before solving that layer. Costs already on the 1/D grid need no rounding. `PROOF.md` section 4.4 gives two small exact examples and the argument. Tests 09 to 11 check them on small cases. The loss bound of 4.3 is not shown for the tower.
+
 ## What Is Not Proved
 
 - Quotient LP certificates prove 1-Lipschitz consistency and LP optimality on the supplied quotient graph $Q$. Soundness on a concrete domain $S$ additionally requires verifying that every concrete transition $s \to s'$ maps to an edge (or self-loop) in $Q$.
