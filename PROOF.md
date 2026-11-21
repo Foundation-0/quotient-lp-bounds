@@ -43,11 +43,11 @@ This matches `Mcproof.Spec.zeroSelfLoop_deficit_composition` and avoids solving 
 
 ## 4. Rounding Direction for Cost Partitions
 
-A cost partition splits each operator cost $c(e)$ into $K$ shares $c_1(e), \dots, c_K(e) \ge 0$ with $\sum_i c_i(e) \le c(e)$. Each share has its own potential $h_i$, the exact distance to the goal set under $c_i$. The summed bound $\sum_i h_i(v)$ is then a lower bound on the true distance.
+A cost partition splits each operator cost $c(e)$ into $K$ shares $c_1(e), \dots, c_K(e)$ with $\sum_i c_i(e) \le c(e)$. Each share has its own potential $h_i$, the exact distance to the goal set under $c_i$. The summed bound $\sum_i h_i(v)$ is then a lower bound on the true distance.
 
-To store shares on a grid of step $1/D$, replace each share by $\lfloor D \cdot c_i(e) \rfloor / D$. Three statements follow.
+**Hypothesis for 4.1 to 4.3.** Every share is non-negative: $c_i(e) \ge 0$. The proofs use it. Section 4.4 treats shares of either sign.
 
-All are checked by `tests/test_rounding.py` on the three instances in `certificate.json` at $D = 10, 100, 10000$.
+To store shares on a grid of step $1/D$, replace each share by $\lfloor D \cdot c_i(e) \rfloor / D$. Three statements follow for non-negative shares. They are checked by `tests/test_rounding.py` on the three instances in `certificate.json` at $D = 10, 100, 10000$.
 
 **4.1 Floored shares stay valid.** Let $c'_i(e) = \lfloor D \cdot c_i(e) \rfloor / D$. Since $\lfloor x \rfloor \le x$, we have $0 \le c'_i(e) \le c_i(e)$. Summing, $\sum_i c'_i(e) \le \sum_i c_i(e) \le c(e)$. The ceiling fails here: with $c(e) = 1$, $K = 3$, equal thirds and $D = 10$, each share becomes $4/10$ and the sum is $12/10 > 1$.
 
@@ -66,5 +66,43 @@ So $d(v) - d'(v) \le |P|/D$, strictly less when $|P| > 0$. The bound holds for e
 - A potential raised by $10^{-6}$ at a vertex with a tight edge: the checker reports a Lipschitz violation (test 06).
 - A share raised by $10^{-9}$ on an unrounded partition: the budget check flags exactly that edge (test 07).
 - The loss bound with half the hops is exceeded on a real run, so the loss check is not vacuous (test 08).
+
+### 4.4 Signed shares
+
+A reduced-cost tower peels one quotient at a time. Write $c_0 = c$. Layer $j$ has a quotient map $\pi_j$. It solves for the distance $h_j$ to the goal classes on the quotient graph under the residual cost $c_{j-1}$. Each quotient edge takes the least cost among the concrete edges that map to it.
+
+The layer then sets $s_j(e) = h_j(\pi_j(u)) - h_j(\pi_j(v))$ for $e = (u, v)$ and passes on $c_j = c_{j-1} - s_j$. This is saturated cost partitioning in the planning literature (Keller et al., IJCAI 2016, Definition 4, and Seipp, Keller and Helmert, JAIR 2020, Definition 13).
+
+Foundation-0/quotient-lp-bounds draft pull request 5 builds such a tower with exact fractions. The tower and its instance are that draft's work. The examples below are ours, found while checking it.
+
+The shares $s_j$ are signed. An edge that leads away from the goal in the quotient has $h_j(\pi_j(u)) < h_j(\pi_j(v))$, so its share is negative and the residual cost grows. The shares sum to $c(e) - c_K(e)$, which is at most $c(e)$ when the final residual is non-negative.
+
+**Example A, flooring potentials after the fact is unsafe.** Take the chain $2 \to 1 \to 0$ with goal $0$, both edges of cost $1/2$, $D = 1$ and the identity quotient. The exact potentials are $(0, 1/2, 1)$ for states $0, 1, 2$. Flooring them gives $(0, 0, 1)$.
+
+The residual of edge $2 \to 1$ is $1/2 + 0 - 1 = -1/2$. A negative residual would start the next layer from a negative cost. The summed bound is also inconsistent: $1 - 0 > 1/2$ on that edge.
+
+**Example B, flooring shares can create a negative cycle.** Take states $1, 2$ and goal $0$. Edges $1 \to 2$ and $2 \to 1$ cost $1$, edge $1 \to 0$ costs $3/2$ and edge $2 \to 0$ costs $1$. One layer on the identity quotient gives potentials $(0, 3/2, 1)$.
+
+The shares are $1/2$ on $1 \to 2$, $-1/2$ on $2 \to 1$, $3/2$ on $1 \to 0$ and $1$ on $2 \to 0$. Flooring each share at $D = 1$ gives $0$ and $-1$ around the 2-cycle, so the cycle has total share $-1$.
+
+The residual costs stay non-negative, so a budget check passes. But the shares now contain a negative cycle, and the distance under them is not defined.
+
+**The safe rule.** Before solving layer $j$, replace its input costs by $\lfloor D \cdot c_{j-1}(e) \rfloor / D$. Solve on those costs and take the shares from the resulting potentials. Pass on the exact residual $c_j = c_{j-1} - s_j$.
+
+By induction $c_{j-1} \ge 0$. Flooring is monotone, so the quotient weight is the floor of the least concrete residual. The potential $h_j$ is a distance under floored costs, so on crossing edges $s_j(e) \le \lfloor D \cdot c_{j-1}(e) \rfloor / D \le c_{j-1}(e)$. On self-loops of the quotient $s_j = 0$. So $c_j \ge 0$.
+
+Summing the shares telescopes to $H(u) - H(v) \le c(e)$ for $H = \sum_j h_j \circ \pi_j$. Every $h_j$ lies on the grid $1/D$. In Example A the rule gives $h = (0, 0, 0)$. In Example B it gives shares $0$ and $0$ around the cycle.
+
+The proof gives no bound on how much value the rule loses against the exact tower. The bound in 4.3 is for one share on the original costs only.
+
+**Costs already on the grid need no rounding.** If every input cost is a multiple of $1/D$, every distance is a sum of such costs. Then every potential, every share and every residual is again a multiple of $1/D$. Flooring changes nothing, and all three rules give the same tower.
+
+**Controls that must fail for 4.4.** Tests 09 to 11 check Example A, Example B and the safe rule on 40 small graphs at $D = 1, 2, 4$ in four quotient orders. The on-grid statement is checked on 320 further cases.
+
+- Flooring potentials is rejected on Example A and on some of the small graphs (tests 09 and 11).
+- Flooring shares is rejected on Example B by the negative-cycle check (test 10).
+- The negative-cycle check fires on a corrupted share vector and stays quiet on a repaired one (test 10).
+- A summed potential raised by $1/2$ above an edge limit is rejected by the consistency check (test 11).
+- The same graphs on a coarser grid are off the grid, and there the rules differ (test 11).
 
 What this does not show: the share-sum rule in 4.1 is checked by code in the test file, because `verify_independent.py` verifies one potential at a time and has no notion of a partition.

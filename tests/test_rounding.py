@@ -10,6 +10,13 @@ Three statements are checked on the three instances in certificate.json, for D =
   C. At every vertex, recomputing on the rounded costs lowers a share's potential by at most
      (edges on a shortest path after rounding) / D.
 
+Three more statements cover signed shares, as made by a reduced-cost tower (tests 09 to 11):
+
+  D. Flooring the potentials of a layer after the fact leaves a negative residual cost.
+  E. Flooring signed shares can create a negative cycle among the shares.
+  F. Flooring each layer's input costs before solving the layer keeps every residual non-negative
+     and the summed potentials consistent. Costs already on the grid need no rounding at all.
+
 Each statement has a control that must fail. Plain assertions are written as unittest methods, so
 `python3 -O` does not strip them.
 """
@@ -120,6 +127,83 @@ def potentials(cert: dict) -> list:
 def loss_bound_violations(pre: list, post: list, hops: list, d: int, scale: Fraction) -> int:
     """Vertices where the loss exceeds scale * hops / d."""
     return sum(1 for v in range(len(pre)) if pre[v] - post[v] > scale * Fraction(hops[v], d))
+
+
+# ---- signed shares: a reduced-cost tower (tests 09 to 11) -------------------------------------------
+
+def quotient_potential(n: int, goals: list, edges: list, cost: list, pi: list) -> list:
+    """Distance to the goal classes in the quotient graph. Crossing edges only, minimum cost per pair."""
+    best = {}
+    for e, (u, v, _) in enumerate(edges):
+        a, b = pi[u], pi[v]
+        if a != b and ((a, b) not in best or cost[e] < best[(a, b)]):
+            best[(a, b)] = cost[e]
+    pairs = sorted(best)
+    qn = max(pi) + 1
+    qgoals = sorted({pi[g] for g in goals})
+    return dist_and_hops(qn, qgoals, [(a, b, None) for a, b in pairs], [best[p] for p in pairs])[0]
+
+
+def peel(n: int, goals: list, edges: list, quotients: list, rule: str, d: int) -> dict:
+    """Peel the quotients in order. Each layer solves its quotient on the residual cost, then subtracts
+    its share (h(pi u) - h(pi v)) from every edge. rule is one of
+      exact       : potentials as solved,
+      floor_pot   : potentials floored to the grid after solving,
+      floor_input : the layer's input costs floored before solving, shares taken from the potentials.
+    Returns the potentials per layer, the summed potential, the final residual, and the first negative
+    residual found (edge index, value) or None."""
+    resid = [e[2] for e in edges]
+    total = [Fraction(0)] * n
+    layers = []
+    for pi in quotients:
+        inp = [floor_grid(x, d) for x in resid] if rule == "floor_input" else resid
+        h = quotient_potential(n, goals, edges, inp, pi)
+        if rule == "floor_pot":
+            h = [floor_grid(x, d) for x in h]
+        layers.append(h)
+        nxt = [resid[e] + h[pi[v]] - h[pi[u]] for e, (u, v, _) in enumerate(edges)]
+        bad = [(e, x) for e, x in enumerate(nxt) if x < 0]
+        if bad:
+            return {"layers": layers, "total": None, "resid": nxt, "first_negative": bad[0]}
+        resid = nxt
+        total = [total[s] + h[pi[s]] for s in range(n)]
+    return {"layers": layers, "total": total, "resid": resid, "first_negative": None}
+
+
+def consistent(n: int, goals: list, edges: list, h: list) -> bool:
+    return all(h[u] - h[v] <= w for u, v, w in edges) and all(h[g] == 0 for g in goals)
+
+
+def has_negative_cycle(n: int, edges: list, cost: list) -> bool:
+    """Bellman-Ford from a virtual source: still improving after n rounds means a negative cycle."""
+    dist = [Fraction(0)] * n
+    for _ in range(n + 1):
+        changed = False
+        for e, (u, v, _) in enumerate(edges):
+            if dist[v] + cost[e] < dist[u]:
+                dist[u] = dist[v] + cost[e]
+                changed = True
+        if not changed:
+            return False
+    return True
+
+
+def small_graphs(count: int, denom: int = 6):
+    """Deterministic small graphs on 5 vertices, goal 0, costs in multiples of 1/denom. Every vertex reaches the goal."""
+    state = 12345
+    def nxt(m: int) -> int:
+        nonlocal state
+        state = (state * 1103515245 + 12345) % (2 ** 31)
+        return (state >> 8) % m
+    for _ in range(count):
+        edges = []
+        for v in range(1, 5):
+            edges.append((v, nxt(v), Fraction(1 + nxt(11), denom)))
+        for _ in range(5):
+            u, v = 1 + nxt(4), nxt(5)
+            if u != v:
+                edges.append((u, v, Fraction(1 + nxt(11), denom)))
+        yield edges
 
 
 class TestFloorRounding(unittest.TestCase):
@@ -238,6 +322,101 @@ class TestFloorRounding(unittest.TestCase):
             post, hops = dist_and_hops(n, goals, edges, fl)
             seen += loss_bound_violations(pre, post, hops, 10, Fraction(1, 2))
         self.assertGreater(seen, 0)
+
+
+    def test_09_signed_shares_floor_of_potentials_leaves_a_negative_residual(self) -> None:
+        # Chain 2 -> 1 -> 0, each edge costs 1/2, D = 1, one layer on the identity quotient.
+        edges = [(2, 1, Fraction(1, 2)), (1, 0, Fraction(1, 2))]
+        ident = [list(range(3))]
+        exact = peel(3, [0], edges, ident, "exact", 1)
+        self.assertEqual(exact["layers"][0], [0, Fraction(1, 2), Fraction(1)])
+        self.assertIsNone(exact["first_negative"])
+        self.assertEqual(exact["resid"], [0, 0])
+        # Floored potentials are [0, 0, 1]. Edge 2 -> 1 gets residual 1/2 + 0 - 1 = -1/2.
+        bad = peel(3, [0], edges, ident, "floor_pot", 1)
+        self.assertEqual(bad["layers"][0], [0, 0, 1])
+        self.assertEqual(bad["first_negative"], (0, Fraction(-1, 2)))
+        # Must-fail control: the check is not always firing. Flooring the input costs first is safe here.
+        safe = peel(3, [0], edges, ident, "floor_input", 1)
+        self.assertIsNone(safe["first_negative"])
+        self.assertTrue(consistent(3, [0], edges, safe["total"]))
+        # Must-fail control on the consistency check itself: the floored potentials break edge 2 -> 1.
+        self.assertFalse(consistent(3, [0], edges, [0, 0, 1]))
+
+    def test_10_signed_shares_floor_of_shares_creates_a_negative_cycle(self) -> None:
+        # States 1 and 2 form a 2-cycle of cost 1 each way. Exits to the goal 0 cost 3/2 and 1.
+        edges = [(1, 2, Fraction(1)), (2, 1, Fraction(1)), (1, 0, Fraction(3, 2)), (2, 0, Fraction(1))]
+        costs = [e[2] for e in edges]
+        ident = [list(range(3))]
+        h = peel(3, [0], edges, ident, "exact", 1)["layers"][0]
+        self.assertEqual(h, [0, Fraction(3, 2), Fraction(1)])
+        shares = [h[u] - h[v] for u, v, _ in edges]
+        self.assertEqual(shares, [Fraction(1, 2), Fraction(-1, 2), Fraction(3, 2), Fraction(1)])
+        self.assertFalse(has_negative_cycle(3, edges, shares))
+        floored = [floor_grid(x, 1) for x in shares]
+        self.assertEqual(floored, [0, -1, 1, 1])
+        # The budget still looks fine: every floored share is at most the unfloored one, so the
+        # remaining cost is non-negative. The damage is the cycle 1 -> 2 -> 1 of total share -1.
+        self.assertTrue(all(c - f >= 0 for c, f in zip(costs, floored)))
+        self.assertTrue(has_negative_cycle(3, edges, floored))
+        # Must-fail control on the cycle check: it must reject a share vector with a known negative cycle
+        # and accept the same graph with the cycle made zero.
+        self.assertTrue(has_negative_cycle(3, edges, [Fraction(0), Fraction(-1), Fraction(1), Fraction(1)]))
+        self.assertFalse(has_negative_cycle(3, edges, [Fraction(0), Fraction(0), Fraction(1), Fraction(1)]))
+        # The safe rule gives shares with no negative cycle.
+        safe = peel(3, [0], edges, ident, "floor_input", 1)
+        self.assertIsNone(safe["first_negative"])
+        safe_shares = [safe["layers"][0][u] - safe["layers"][0][v] for u, v, _ in edges]
+        self.assertEqual(safe_shares, [0, 0, 1, 1])
+        self.assertFalse(has_negative_cycle(3, edges, safe_shares))
+
+    def test_11_safe_rule_floor_each_layers_input_on_small_graphs(self) -> None:
+        merged = [0, 1, 1, 2, 2]
+        coarse = [0, 1, 2, 2, 2]
+        orders = [[list(range(5)), merged], [merged, list(range(5))], [merged, coarse], [coarse, merged]]
+        unsafe_failures = 0
+        for edges in small_graphs(40):
+            for d in (1, 2, 4):
+                for qs in orders:
+                    safe = peel(5, [0], edges, qs, "floor_input", d)
+                    self.assertIsNone(safe["first_negative"], msg=f"{edges} D={d}")
+                    self.assertTrue(consistent(5, [0], edges, safe["total"]), msg=f"{edges} D={d}")
+                    # every layer's potentials sit on the grid
+                    for h in safe["layers"]:
+                        self.assertTrue(all((x * d).denominator == 1 for x in h))
+                    # Must-fail control: the same case under the unsafe rule.
+                    if peel(5, [0], edges, qs, "floor_pot", d)["first_negative"] is not None:
+                        unsafe_failures += 1
+        self.assertGreater(unsafe_failures, 0)
+        # Costs already on the grid need no rounding at all: all three rules agree.
+        ongrid_cases = 0
+        for edges in small_graphs(40, denom=4):
+            for d in (4, 8):
+                for qs in orders:
+                    self.assertTrue(all((w * d).denominator == 1 for _, _, w in edges))
+                    ongrid_cases += 1
+                    exact = peel(5, [0], edges, qs, "exact", d)
+                    self.assertIsNone(exact["first_negative"])
+                    for rule in ("floor_input", "floor_pot"):
+                        same = peel(5, [0], edges, qs, rule, d)
+                        self.assertEqual(same["layers"], exact["layers"], msg=f"{rule} {edges} D={d}")
+                        self.assertEqual(same["resid"], exact["resid"])
+        self.assertEqual(ongrid_cases, 320)
+        # Must-fail control: the same graphs on a coarser grid are off the grid and the rules then differ.
+        differ = 0
+        for edges in small_graphs(40, denom=4):
+            for qs in orders:
+                if peel(5, [0], edges, qs, "floor_pot", 1)["layers"] != peel(5, [0], edges, qs, "exact", 1)["layers"]:
+                    differ += 1
+        self.assertGreater(differ, 0)
+        # Must-fail control on the consistency check: raise one summed potential and it must be rejected.
+        edges = next(small_graphs(1))
+        total = peel(5, [0], edges, orders[0], "floor_input", 2)["total"]
+        self.assertTrue(consistent(5, [0], edges, total))
+        tampered = list(total)
+        u, v, w = edges[0]
+        tampered[u] = tampered[v] + w + Fraction(1, 2)
+        self.assertFalse(consistent(5, [0], edges, tampered))
 
 
 if __name__ == "__main__":

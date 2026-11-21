@@ -34,7 +34,11 @@ python3 -O -B -m unittest discover -s tests -p 'test_*.py' -v
 
 ## Rounding Direction
 
-Flooring each share of a cost partition to a grid of step 1/D keeps the shares within the operator cost. Potentials computed before rounding go stale wherever a distance falls, so they must be recomputed on the rounded costs. The loss per share at a vertex is at most the edges on its shortest path after rounding, divided by D. The proof and controls are in `PROOF.md` section 4, and `tests/test_rounding.py` checks them on the three instances.
+Flooring each share of a cost partition to a grid of step 1/D keeps non-negative shares within the operator cost. Potentials computed before rounding go stale wherever a distance falls, so they must be recomputed on the rounded costs. The loss per share at a vertex is at most the edges on its shortest path after rounding, divided by D. The proof and controls are in `PROOF.md` section 4, and `tests/test_rounding.py` checks them on the three instances.
+
+These three statements assume non-negative shares. A reduced-cost tower, as in Foundation-0/quotient-lp-bounds draft pull request 5, produces shares of either sign. There, flooring potentials after the fact leaves negative residual costs, and flooring shares can create a negative cycle.
+
+The safe rule is to floor each layer's input costs before solving that layer. Costs already on the 1/D grid need no rounding. `PROOF.md` section 4.4 gives two small exact examples and the argument. Tests 09 to 11 check them on small cases. The loss bound of 4.3 is not shown for the tower.
 
 ## What Is Not Proved
 
