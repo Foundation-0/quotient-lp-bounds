@@ -3,9 +3,14 @@ from __future__ import annotations
 
 import copy
 import json
+import sys
 from fractions import Fraction
 from pathlib import Path
 import unittest
+
+ROOT = Path(__file__).resolve().parent.parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 from verify import build_all_certificates, synthesize_1lipschitz_quotient_lp
 from verify_independent import (

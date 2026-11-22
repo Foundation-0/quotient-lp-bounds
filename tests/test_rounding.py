@@ -26,9 +26,14 @@ import copy
 import heapq
 import json
 import math
+import sys
 from fractions import Fraction
 from pathlib import Path
 import unittest
+
+ROOT = Path(__file__).resolve().parent.parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 from verify import fmt_q, synthesize_1lipschitz_quotient_lp
 from verify_independent import verify_quotient_lp_certificate
