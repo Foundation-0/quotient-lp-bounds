@@ -1,9 +1,10 @@
-"""Exhaustive rejection-branch and boundary regression suite for verify_independent.py (Issue #2).
+"""Exhaustive rejection-branch and guard-subcondition regression suite for verify_independent.py (Issues #2, #7).
 
 Covers every rejection branch in `verify_quotient_lp_certificate` (42/42) and
-`verify_certificate_bundle_file` (5/5), plus `loads_exact_json` and `parse_q`
-boundaries, matching exact rejection reason prefixes so deleting any single
-check cannot be silently masked by a later check.
+`verify_certificate_bundle_file` (5/5), all nine Issue #7 guard sub-conditions,
+plus `loads_exact_json` and `parse_q` boundaries, matching exact rejection reason
+prefixes so deleting or weakening any single check cannot be silently masked by a
+later check.
 
 Uses unittest assertion methods only (zero bare `assert` statements), so
 `python3 -O` executes every check identically.
@@ -479,6 +480,135 @@ class TestIndependentRejectionBranches(unittest.TestCase):
             parsed = json.loads(proc_bad.stdout)
             self.assertFalse(parsed["valid"])
             self.assertEqual(parsed["reason"], "empty_instances_list")
+
+    def test_09_issue7_guard_subconditions_and_boundary_accepts(self) -> None:
+        # Row 1: n <= 0 -> n <= 1 (valid 1-vertex certificate must be accepted).
+        cert_one = {
+            "name": "single_vertex",
+            "num_vertices": 1,
+            "goals": [0],
+            "weights_mu": [0],
+            "primal_h": [0],
+            "edges": [],
+            "dual_edge_y": [],
+            "primal_objective": 0,
+            "dual_objective": 0,
+        }
+        res_one = verify_quotient_lp_certificate(cert_one)
+        self.assertTrue(res_one["valid"], msg=str(res_one))
+        self.assertEqual(res_one["reason"], "ok")
+        self.assertEqual(res_one["num_vertices"], 1)
+        self.assertEqual(res_one["num_edges"], 0)
+        self.assertEqual(res_one["primal_objective"], "0")
+        self.assertEqual(res_one["dual_objective"], "0")
+
+        # Row 2: den <= 0 -> den <= 1 (explicit "1/1" rational denominator must be accepted).
+        self.assertEqual(parse_q("1/1"), 1)
+        cert_unit_den = {
+            "name": "unit_denominator",
+            "num_vertices": 2,
+            "goals": [0],
+            "weights_mu": [0, 1],
+            "primal_h": [0, "1/1"],
+            "edges": [[1, 0, "1/1"]],
+            "dual_edge_y": ["1/1"],
+            "primal_objective": "1/1",
+            "dual_objective": "1/1",
+        }
+        res_unit = verify_quotient_lp_certificate(cert_unit_den)
+        self.assertTrue(res_unit["valid"], msg=str(res_unit))
+        self.assertEqual(res_unit["reason"], "ok")
+        self.assertEqual(res_unit["primal_objective"], "1")
+        self.assertEqual(res_unit["dual_objective"], "1")
+
+        # Row 3: isinstance(gi, bool) removed in goal_phi_indices check
+        # (`phi_values = [0, 0]` ensures phi[True] == 0 does not mask removal).
+        for bad_bool_gi in (True, False):
+            c_bool = _minimal_valid_cert(with_deficit=True)
+            c_bool["zero_self_loop_deficit"] = {
+                "phi_values": [0, 0],
+                "goal_phi_indices": [bad_bool_gi],
+                "abstract_deficit_edges": [
+                    {"phi_u": 0, "phi_v": 1, "quotient_self_loop": False, "concrete_cost": 0},
+                ],
+            }
+            self._assert_rejected(c_bool, "nonzero_or_invalid_goal_phi", f"bool gi={bad_bool_gi!r}")
+
+        # Rows 4 & 5: gi < 0 removed and gi < -1 in goal_phi_indices check
+        # (`phi_values = [0, 2, 0]` ensures phi[-1] == 0 does not mask removal/weakening).
+        c_neg = _minimal_valid_cert(with_deficit=True)
+        c_neg["zero_self_loop_deficit"] = {
+            "phi_values": [0, 2, 0],
+            "goal_phi_indices": [-1],
+            "abstract_deficit_edges": [
+                {"phi_u": 1, "phi_v": 2, "quotient_self_loop": True, "concrete_cost": 2},
+            ],
+        }
+        self._assert_rejected(c_neg, "nonzero_or_invalid_goal_phi", "gi=-1 with phi[-1]==0")
+
+        # Shared 2-vertex zero-weight base so length-matched strings cannot be masked by later checks.
+        base_zero = {
+            "name": "zero_2v",
+            "num_vertices": 2,
+            "goals": [0],
+            "weights_mu": [0, 0],
+            "primal_h": [0, 0],
+            "edges": [],
+            "dual_edge_y": [],
+            "primal_objective": 0,
+            "dual_objective": 0,
+        }
+        res_base = verify_quotient_lp_certificate(base_zero)
+        self.assertTrue(res_base["valid"], msg=str(res_base))
+
+        # Row 6: not isinstance(caps_raw, list) removed (`len("00") == 2` and every char parses to 0).
+        c_caps_str = copy.deepcopy(base_zero)
+        c_caps_str["upper_caps"] = "00"
+        c_caps_str["dual_cap_z"] = [0, 0]
+        self._assert_rejected(c_caps_str, "upper_caps_length_mismatch", "upper_caps='00'")
+
+        # Row 7: not isinstance(edges_raw, list) removed (`len("") == len([]) == 0`).
+        c_edges_str = copy.deepcopy(base_zero)
+        c_edges_str["edges"] = ""
+        c_edges_str["dual_edge_y"] = []
+        self._assert_rejected(c_edges_str, "edges_or_dual_y_length_mismatch", "edges=''")
+
+        # Row 8: not isinstance(y_raw, list) removed (`len([]) == len("") == 0`).
+        c_y_str = copy.deepcopy(base_zero)
+        c_y_str["edges"] = []
+        c_y_str["dual_edge_y"] = ""
+        self._assert_rejected(c_y_str, "edges_or_dual_y_length_mismatch", "dual_edge_y=''")
+
+        # Same-length string guards on weights_mu, primal_h, dual_cap_z, and phi_values.
+        for field, expected in (
+            ("weights_mu", "weights_mu_length_mismatch"),
+            ("primal_h", "primal_h_length_mismatch"),
+        ):
+            c_str = copy.deepcopy(base_zero)
+            c_str[field] = "00"
+            self._assert_rejected(c_str, expected, f"{field}='00'")
+        c_z_str = copy.deepcopy(base_zero)
+        c_z_str["upper_caps"] = [0, 0]
+        c_z_str["dual_cap_z"] = "00"
+        self._assert_rejected(c_z_str, "dual_cap_z_length_mismatch", "dual_cap_z='00'")
+        c_phi_str = copy.deepcopy(base_zero)
+        c_phi_str["zero_self_loop_deficit"] = {
+            "phi_values": "00",
+            "goal_phi_indices": [0],
+            "abstract_deficit_edges": [
+                {"phi_u": 0, "phi_v": 1, "quotient_self_loop": False, "concrete_cost": 0},
+            ],
+        }
+        self._assert_rejected(c_phi_str, "invalid_deficit_phi_values", "phi_values='00'")
+
+        # Row 9: not isinstance(data, dict) removed (`"instances" in ["instances"]` is True;
+        # without the dict guard, `data["instances"]` raises TypeError instead of returning a reason).
+        with tempfile.TemporaryDirectory() as td:
+            p_list = Path(td) / "list_with_instances_str.json"
+            p_list.write_text('["instances"]\n', encoding="utf-8")
+            res_list = verify_certificate_bundle_file(p_list)
+            self.assertFalse(res_list["valid"], msg=str(res_list))
+            self.assertEqual(res_list["reason"], "missing_instances_list")
 
 
 if __name__ == "__main__":
