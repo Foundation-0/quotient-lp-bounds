@@ -1,0 +1,70 @@
+{
+  "benchmark_sha256": "ddb8d4f75ecd3eda8cffb4329a8b0a778a7a6985dd3094e98692dab2cfcdc6f9",
+  "payload": {
+    "clock_source": "time.perf_counter_ns",
+    "energy_power_status": "UNCONTROLLED_LAPTOP_NOT_CLAIMED",
+    "linear_basis_scaling": [
+      {
+        "dim": 12,
+        "exact_residual_verify_total_ns": 1087449,
+        "fangcheng_total_ns": 1716441,
+        "fangcheng_vs_naive_speedup_q": "1800626/572147",
+        "naive_dense_fraction_total_ns": 5401878,
+        "repeats": 5,
+        "verify_vs_fangcheng_speedup_q": "572147/362483",
+        "verify_vs_naive_speedup_q": "1800626/362483"
+      },
+      {
+        "dim": 16,
+        "exact_residual_verify_total_ns": 1988962,
+        "fangcheng_total_ns": 3905353,
+        "fangcheng_vs_naive_speedup_q": "14595812/3905353",
+        "naive_dense_fraction_total_ns": 14595812,
+        "repeats": 5,
+        "verify_vs_fangcheng_speedup_q": "3905353/1988962",
+        "verify_vs_naive_speedup_q": "7297906/994481"
+      },
+      {
+        "dim": 20,
+        "exact_residual_verify_total_ns": 2987584,
+        "fangcheng_total_ns": 7275810,
+        "fangcheng_vs_naive_speedup_q": "6031753/1455162",
+        "naive_dense_fraction_total_ns": 30158765,
+        "repeats": 5,
+        "verify_vs_fangcheng_speedup_q": "3637905/1493792",
+        "verify_vs_naive_speedup_q": "30158765/2987584"
+      }
+    ],
+    "measured_components_sum_ns": 497382822,
+    "quotient_lp_n48_comparison": {
+      "active_basis_fangcheng_total_ns": 51345192,
+      "active_basis_naive_fraction_total_ns": 188142319,
+      "dense_lp_verify_total_ns": 142507786,
+      "fangcheng_vs_naive_speedup_q": "188142319/51345192",
+      "num_edges": 240,
+      "num_vertices": 48,
+      "repeats": 5,
+      "sparse_farkas_verify_total_ns": 5543223,
+      "sparse_verify_vs_dense_verify_speedup_q": "142507786/5543223",
+      "sparse_verify_vs_fangcheng_speedup_q": "17115064/1847741",
+      "sparse_verify_vs_naive_speedup_q": "188142319/5543223"
+    },
+    "repeats": 5,
+    "schema": "exact_farkas_delsarte_wallclock_benchmark_v1",
+    "total_benchmark_ns": 562357298,
+    "tractable_small_control_slowdown": {
+      "certified_over_direct_slowdown_q": "4861810/228971",
+      "direct_spfa_eval_total_ns": 1831768,
+      "full_certified_pipeline_total_ns": 38894480,
+      "num_edges": 30,
+      "num_vertices": 6,
+      "repeats": 50,
+      "slowdown_observed": true
+    },
+    "unmeasured_setup_and_verify_ns": 64974476,
+    "wallclock_budget_ns": 300000000000,
+    "within_wallclock_budget": true
+  },
+  "payload_sha256": "9e6aab8c060200595a2dfd2c8bbe9a000f65bb9db9f2652e1f101893115c6a9d",
+  "schema": "exact_farkas_delsarte_wallclock_benchmark_v1"
+}
