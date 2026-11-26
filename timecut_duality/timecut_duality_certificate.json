@@ -1,0 +1,131 @@
+{
+  "arithmetic_domain": "exact_Z_Q_GF2_stdlib_zero_floats_zero_div_zero_pow_zero_logs",
+  "certificate_sha256": "253ad3c6755031964b3051a47b183bfeb30538a0b531d5cc7c3dbefd2bd84296",
+  "overall_passed": true,
+  "payload_sha256": "9e791e49e4cf52c79486e137541e002f4e7ab9ae8f150064457991b9d2d55118",
+  "pillars": {
+    "p1_timecut_lp_and_threshold": {
+      "dyadic_entropy_ceiling_exact_2_4_8_16": true,
+      "general_rects_verified_all_2_to_20": true,
+      "laminar_dp_2_to_20": [
+        1,
+        2,
+        4,
+        5,
+        7,
+        9,
+        12,
+        13,
+        15,
+        17,
+        20,
+        22,
+        25,
+        28,
+        32,
+        33,
+        35,
+        37,
+        40
+      ],
+      "lp_optima_2_to_20": [
+        "1/1",
+        "2/1",
+        "4/1",
+        "5/1",
+        "7/1",
+        "9/1",
+        "12/1",
+        "13/1",
+        "15/1",
+        "17/1",
+        "20/1",
+        "22/1",
+        "25/1",
+        "28/1",
+        "32/1",
+        "33/1",
+        "107/3",
+        "38/1",
+        "122/3"
+      ],
+      "minimal_crossing_advantage_n": 18,
+      "n18_crossing_gap": "2/3",
+      "n18_dual_lcm_den": 3,
+      "n18_dual_support_size": 41,
+      "n18_laminar_tree_optimum": 35,
+      "n18_lp_optimum": "107/3",
+      "n18_primal_lcm_den": 3,
+      "n18_primal_support_size": 34,
+      "n19_crossing_gap": "1/1",
+      "n19_laminar_tree_optimum": 37,
+      "n19_lp_optimum": "38/1",
+      "n20_lp_optimum": "122/3",
+      "passed": true,
+      "zero_gap_for_all_2_le_n_le_17": true
+    },
+    "p2_banked_cnf_envelope_and_port_gadget": {
+      "every_field_tseitin_mod2_mod3_obstruction_verified": true,
+      "five_clause_port_gadget": {
+        "all_false_boundary_unsat": true,
+        "deleted_clause_models_at_zero_boundary": [
+          2,
+          2,
+          2,
+          1,
+          1
+        ],
+        "extension_formula_2_sum_ports_exact": true,
+        "irredundant_all_5_clauses": true
+      },
+      "k24_ascii_over_raw_bounds": [
+        "64/1",
+        "14841671633/100663296"
+      ],
+      "k24_compulsory_probes_proj_and_global": [
+        268435456,
+        536870912
+      ],
+      "k24_vars_per_row_8bank": "76109389/16777216",
+      "linear_bit_length_envelope_verified": true,
+      "naive_2bank_superlinear_inflation_refuted": true,
+      "passed": true,
+      "scales_checked_k": [
+        8,
+        12,
+        16,
+        20,
+        24
+      ]
+    },
+    "p3_lean4_package": {
+      "file_sha256s": {
+        "AxiomAudit.lean": "67bf4fd74ead82790d2072b68f81b7e5a801a2bc1fed70c336d8d29ee26ddf04",
+        "CleanRoomTimeCutDuality.lean": "63b1d4995dffd148c3973719b29f4f0cff72b137f4cc9744f4fd29558499cb05",
+        "lake-manifest.json": "6b8f8f994fad868af7aebe620a2431332757369d66d84988a6b592b1c1b08edc",
+        "lakefile.toml": "73f9d0f11938a8bcd6c303c9f6c5f2f4f3b35f326c3030c5939587ca965f2e09",
+        "lean-toolchain": "582a63f8f9c5128067b688778c1051cf1464c3ca9d57b9325025c051c29b774a"
+      },
+      "manifest_zero_external_packages": true,
+      "passed": true,
+      "theorem_count": 30,
+      "toolchain": "leanprover/lean4:v4.36.0"
+    },
+    "p4_crossing_c1p_and_char2_rank_obstructions": {
+      "c1p_1d_contiguous_on_all_n18_active_intervals": true,
+      "char2_vs_q_witness_j3_minus_i3_ranks": [
+        2,
+        3
+      ],
+      "grid_18cell_3x6_vs_2x9_gcd_cycles": [
+        3,
+        1
+      ],
+      "n18_active_span_intervals": 34,
+      "n18_strict_laminar_crossing_interval_pairs": 71,
+      "passed": true
+    }
+  },
+  "schema_version": "quotient_lp_bounds.cleanroom_timecut_duality.v1",
+  "status": "VERIFIED"
+}
