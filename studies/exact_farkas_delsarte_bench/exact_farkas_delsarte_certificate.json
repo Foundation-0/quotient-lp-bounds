@@ -1,0 +1,190 @@
+{
+  "certificate_sha256": "29b99332981c2ad709a7d778e42b60cc82c1f73cc8697788239e4db129335673",
+  "payload": {
+    "ast_purity_self_audit": {
+      "ast_div": 0,
+      "bare_asserts": 0,
+      "float_or_complex_literals": 0,
+      "forbidden_math_sys_time": 0,
+      "forbidden_names": 0,
+      "fraction_str_or_from_float": 0,
+      "negative_pow": 0
+    },
+    "energy_power_status": "UNCONTROLLED_LAPTOP_NOT_CLAIMED",
+    "exact_math_guard_check": {
+      "gcd_355_113": 1,
+      "isqrt_10000": 100
+    },
+    "family1_delsarte": {
+      "all_zero_duality_gap": true,
+      "cases": [
+        {
+          "d": 4,
+          "delsarte_exact_bound": "16/1",
+          "dual_poly_nonzero": {
+            "y_1": "1/1",
+            "y_2": "1/4"
+          },
+          "hamming_bound": 28,
+          "lp_check": {
+            "active_support_rank": 2,
+            "dual_obj": "15/1",
+            "duality_gap": "0/1",
+            "num_cols": 5,
+            "num_rows": 8,
+            "primal_obj": "15/1",
+            "sense": "max_le"
+          },
+          "n": 8,
+          "singleton_bound": 32,
+          "tightening_over_hamming": "12/1"
+        },
+        {
+          "d": 6,
+          "delsarte_exact_bound": "24/1",
+          "dual_poly_nonzero": {
+            "y_1": "1/1",
+            "y_2": "1/6"
+          },
+          "hamming_bound": 51,
+          "lp_check": {
+            "active_support_rank": 2,
+            "dual_obj": "23/1",
+            "duality_gap": "0/1",
+            "num_cols": 7,
+            "num_rows": 12,
+            "primal_obj": "23/1",
+            "sense": "max_le"
+          },
+          "n": 12,
+          "singleton_bound": 128,
+          "tightening_over_hamming": "27/1"
+        },
+        {
+          "d": 8,
+          "delsarte_exact_bound": "32/1",
+          "dual_poly_nonzero": {
+            "y_1": "1/1",
+            "y_2": "1/8"
+          },
+          "hamming_bound": 94,
+          "lp_check": {
+            "active_support_rank": 2,
+            "dual_obj": "31/1",
+            "duality_gap": "0/1",
+            "num_cols": 9,
+            "num_rows": 16,
+            "primal_obj": "31/1",
+            "sense": "max_le"
+          },
+          "n": 16,
+          "obfuscated_permutation_check": {
+            "active_support_rank": 2,
+            "delsarte_exact_bound": "32/1",
+            "gain_retention": "1/1",
+            "seed_cols": 154116,
+            "seed_rows": 154016
+          },
+          "singleton_bound": 512,
+          "tightening_over_hamming": "62/1"
+        },
+        {
+          "d": 10,
+          "delsarte_exact_bound": "40/1",
+          "dual_poly_nonzero": {
+            "y_1": "1/1",
+            "y_2": "1/10"
+          },
+          "hamming_bound": 169,
+          "lp_check": {
+            "active_support_rank": 2,
+            "dual_obj": "39/1",
+            "duality_gap": "0/1",
+            "num_cols": 11,
+            "num_rows": 20,
+            "primal_obj": "39/1",
+            "sense": "max_le"
+          },
+          "n": 20,
+          "obfuscated_permutation_check": {
+            "active_support_rank": 2,
+            "delsarte_exact_bound": "40/1",
+            "gain_retention": "1/1",
+            "seed_cols": 154120,
+            "seed_rows": 154020
+          },
+          "singleton_bound": 2048,
+          "tightening_over_hamming": "129/1"
+        }
+      ],
+      "family": "F1_DELSARTE_KRAWTCHOUK_PLOTKIN_RM",
+      "obfuscation_retention_min": "1/1"
+    },
+    "family2_quotient_lp": {
+      "family": "F2_QUOTIENT_LP_1LIPSCHITZ_FARKAS_FLOW",
+      "num_edges": 240,
+      "num_vertices": 48,
+      "obfuscated_check": {
+        "active_support_rank": 48,
+        "bound_retention": "1/1",
+        "dual_obj": "535/4",
+        "primal_obj": "535/4",
+        "seed_edges": 154049,
+        "seed_vertices": 154048
+      },
+      "orig_check": {
+        "active_support_rank": 48,
+        "dual_obj": "535/4",
+        "duality_gap": "0/1",
+        "num_cols": 48,
+        "num_rows": 288,
+        "primal_obj": "535/4",
+        "sense": "max_le"
+      },
+      "sparse_check": {
+        "dual_obj": "535/4",
+        "duality_gap": "0/1",
+        "num_edges": 240,
+        "num_vertices": 48,
+        "primal_obj": "535/4"
+      }
+    },
+    "family3_zero_log_farkas": {
+      "family": "F3_ZERO_LOG_FARKAS_INFEASIBILITY_OBSTRUCTION",
+      "holder_comma_53tet": {
+        "positive_gap": "40432553845953101497907",
+        "three_pow_53": "19383245667680019896796723",
+        "two_pow_84": "19342813113834066795298816"
+      },
+      "local_3node_feasible_witnesses": {
+        "subcone_012": {
+          "alpha0": "355/113",
+          "alpha1": "-16/113",
+          "values": [
+            "355/113",
+            "3/1",
+            "323/113"
+          ]
+        },
+        "subcone_123": {
+          "alpha0": "307/113",
+          "alpha1": "16/113",
+          "values": [
+            "323/113",
+            "3/1",
+            "355/113"
+          ]
+        }
+      },
+      "zu_chongzhi_global_farkas": {
+        "b_dot_y": "-32/113",
+        "infeasible_certified": true,
+        "num_cols": 2,
+        "num_rows": 8
+      }
+    },
+    "schema": "exact_farkas_delsarte_certificate_v1"
+  },
+  "payload_sha256": "2b619307fd3cc0b12636921152f9d2ee4b0d5102bbefeef776b57aa8fef92cd3",
+  "schema": "exact_farkas_delsarte_certificate_v1"
+}
