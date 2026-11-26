@@ -1,0 +1,37 @@
+/-
+Kernel Axiom Footprint Audit for CleanRoomTimeCutDuality (30 theorems).
+Verifies every theorem depends only on a subset of {propext, Quot.sound}
+(zero Classical.choice, zero bv_decide, zero native_decide, zero sorryAx).
+-/
+import CleanRoomTimeCutDuality
+
+#print axioms CleanRoomTimeCutDuality.gridSum_zero
+#print axioms CleanRoomTimeCutDuality.gridSum_add
+#print axioms CleanRoomTimeCutDuality.gridSum_mul_left
+#print axioms CleanRoomTimeCutDuality.gridSum_mul_right
+#print axioms CleanRoomTimeCutDuality.gridSum_mono
+#print axioms CleanRoomTimeCutDuality.fubini_rect_pair_exchange
+#print axioms CleanRoomTimeCutDuality.scale_primal_le_weighted_dual
+#print axioms CleanRoomTimeCutDuality.universal_weak_duality
+#print axioms CleanRoomTimeCutDuality.ble_false_gt
+#print axioms CleanRoomTimeCutDuality.and4_ble_mp
+#print axioms CleanRoomTimeCutDuality.and4_ble_mpr
+#print axioms CleanRoomTimeCutDuality.balanced_core_inRect_le
+#print axioms CleanRoomTimeCutDuality.balanced_core_charge_eq
+#print axioms CleanRoomTimeCutDuality.balanced_core_dualMass_le
+#print axioms CleanRoomTimeCutDuality.treeSize_pos
+#print axioms CleanRoomTimeCutDuality.laminar_bellman_subadditive_le20
+#print axioms CleanRoomTimeCutDuality.universal_laminar_tree_upper_bound
+#print axioms CleanRoomTimeCutDuality.witnessTree18_attains_35
+#print axioms CleanRoomTimeCutDuality.cleanRoomPrimal18_pair_congestion
+#print axioms CleanRoomTimeCutDuality.cleanRoomPrimal18_beats_every_laminar_tree
+#print axioms CleanRoomTimeCutDuality.dual18_total_mass_eq_107
+#print axioms CleanRoomTimeCutDuality.dual18_covers_all_81_balanced_cores
+#print axioms CleanRoomTimeCutDuality.checkBalancedAtCenter_sound
+#print axioms CleanRoomTimeCutDuality.checkAllBalanced18_sound
+#print axioms CleanRoomTimeCutDuality.dual18_covers_every_valid_rect18
+#print axioms CleanRoomTimeCutDuality.n18_universal_optimum_upper_bound
+#print axioms CleanRoomTimeCutDuality.cleanRoomPrimal19_pair_congestion
+#print axioms CleanRoomTimeCutDuality.cleanRoomPrimal19_integer_gap_over_every_tree
+#print axioms CleanRoomTimeCutDuality.eight_bank_diophantine_sublinearity
+#print axioms CleanRoomTimeCutDuality.five_clause_gadget_exact_multiplicity

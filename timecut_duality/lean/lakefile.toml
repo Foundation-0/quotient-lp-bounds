@@ -1,0 +1,9 @@
+name = "timecut_duality"
+version = "0.1.0"
+defaultTargets = ["CleanRoomTimeCutDuality", "AxiomAudit"]
+
+[[lean_lib]]
+name = "CleanRoomTimeCutDuality"
+
+[[lean_lib]]
+name = "AxiomAudit"
